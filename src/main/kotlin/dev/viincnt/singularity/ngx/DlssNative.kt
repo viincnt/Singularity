@@ -140,6 +140,7 @@ object DlssNative {
             resources.output.vkImage(), resources.outputView.vkImageView(),
             resources.inputWidth, resources.inputHeight, resources.outputWidth, resources.outputHeight,
             DlssTemporalState.jitterX(), DlssTemporalState.jitterY(),
+            if (DlssTemporalState.consumeResetRequest()) 1 else 0,
         )
         VulkanUtils.crashIfFailure(device, VK12.vkEndCommandBuffer(commandBuffer), "Singularity failed to end the DLSS evaluation command buffer")
         encoder.execute(commandBuffer)
@@ -198,7 +199,7 @@ object DlssNative {
         motionImage: Long, motionView: Long,
         outputImage: Long, outputView: Long,
         inputWidth: Int, inputHeight: Int, outputWidth: Int, outputHeight: Int,
-        jitterX: Float, jitterY: Float,
+        jitterX: Float, jitterY: Float, reset: Int,
     ): String
 }
 

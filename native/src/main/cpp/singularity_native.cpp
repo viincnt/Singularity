@@ -257,7 +257,7 @@ Java_dev_viincnt_singularity_ngx_DlssNative_evaluateFeature(
     jlong motionImage, jlong motionView,
     jlong outputImage, jlong outputView,
     jint inputWidth, jint inputHeight, jint outputWidth, jint outputHeight,
-    jfloat jitterX, jfloat jitterY
+    jfloat jitterX, jfloat jitterY, jint reset
 ) {
     if (!g_initialized || g_dlssFeature == nullptr) {
         return env->NewStringUTF("initialized=false;result=0xBAD00007");
@@ -298,7 +298,7 @@ Java_dev_viincnt_singularity_ngx_DlssNative_evaluateFeature(
     eval.InJitterOffsetY = jitterY;
     eval.InRenderSubrectDimensions.Width = static_cast<unsigned int>(inputWidth);
     eval.InRenderSubrectDimensions.Height = static_cast<unsigned int>(inputHeight);
-    eval.InReset = 0;
+    eval.InReset = reset;
     eval.InMVScaleX = 1.0f;
     eval.InMVScaleY = 1.0f;
     const NVSDK_NGX_Result result = NGX_VULKAN_EVALUATE_DLSS_EXT(

@@ -14,6 +14,7 @@ object DlssTemporalState {
     private var reported = false
     private var jitterX = 0.0f
     private var jitterY = 0.0f
+    private var resetRequested = true
 
     fun jitteredProjection(matrix: Matrix4fc, width: Int, height: Int): Matrix4f {
         if (width <= 0 || height <= 0) return Matrix4f(matrix)
@@ -33,6 +34,9 @@ object DlssTemporalState {
         val deltaX = previousX?.let { position.x - it } ?: 0.0
         val deltaY = previousY?.let { position.y - it } ?: 0.0
         val deltaZ = previousZ?.let { position.z - it } ?: 0.0
+        if (previousX == null || deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ > TELEPORT_DISTANCE_SQUARED) {
+            resetRequested = true
+        }
         previousX = position.x
         previousY = position.y
         previousZ = position.z
@@ -55,7 +59,10 @@ object DlssTemporalState {
         reported = false
         jitterX = 0.0f
         jitterY = 0.0f
+        resetRequested = true
     }
+
+    fun consumeResetRequest(): Boolean = resetRequested.also { resetRequested = false }
 
     private fun halton(index: Long, base: Int): Float {
         var value = 0.0f
@@ -68,4 +75,6 @@ object DlssTemporalState {
         }
         return value
     }
+
+    private const val TELEPORT_DISTANCE_SQUARED = 256.0
 }

@@ -30,6 +30,7 @@ object DlssFrameTargets {
         }?.let { return it }
 
         close()
+        DlssTemporalState.reset()
         val gpu = RenderSystem.getDevice()
         val usage = GpuTexture.USAGE_COPY_SRC or GpuTexture.USAGE_COPY_DST or
             GpuTexture.USAGE_TEXTURE_BINDING or GpuTexture.USAGE_RENDER_ATTACHMENT
