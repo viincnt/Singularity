@@ -261,7 +261,7 @@ The current prototype is developed against:
 ### Run the development client
 
 ```powershell
-.\gradlew.bat --gradle-user-home .gradle-user-home runClient
+.\gradlew.bat --gradle-user-home .gradle-user-home runClient -x createMinecraftArtifacts
 ```
 
 The `runClient` development profile currently:

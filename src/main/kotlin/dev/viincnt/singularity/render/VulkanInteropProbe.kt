@@ -86,6 +86,15 @@ object VulkanInteropProbe {
 
         NativeVulkanPassProbe.runOnce(backend)
         DlssNative.initializeOnce(backend)
+        DlssNative.logOptimalSettingsFor(snapshot.width, snapshot.height)
+        DlssNative.qualityRecommendation(snapshot.width, snapshot.height)?.let {
+            DlssFrameTargets.ensure(snapshot.width, snapshot.height, it)
+            DlssFrameTargets.beginFrame()
+            DlssTemporalState.beginFrame(Minecraft.getInstance().gameRenderer.mainCamera())
+        }
+        DlssNative.createFeatureOnce(backend, snapshot.width, snapshot.height)
+        DlssFrameTargets.markDlssOutputReady(DlssNative.evaluate(backend))
+        DlssFrameTargets.compositeTo(target)
     }
 
     private fun RenderTarget.toVulkanResources(
