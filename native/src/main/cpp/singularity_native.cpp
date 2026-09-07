@@ -256,7 +256,8 @@ Java_dev_viincnt_singularity_ngx_DlssNative_evaluateFeature(
     jlong depthImage, jlong depthView,
     jlong motionImage, jlong motionView,
     jlong outputImage, jlong outputView,
-    jint inputWidth, jint inputHeight, jint outputWidth, jint outputHeight
+    jint inputWidth, jint inputHeight, jint outputWidth, jint outputHeight,
+    jfloat jitterX, jfloat jitterY
 ) {
     if (!g_initialized || g_dlssFeature == nullptr) {
         return env->NewStringUTF("initialized=false;result=0xBAD00007");
@@ -293,6 +294,8 @@ Java_dev_viincnt_singularity_ngx_DlssNative_evaluateFeature(
     eval.Feature.InSharpness = 0.35f;
     eval.pInDepth = &depth;
     eval.pInMotionVectors = &motion;
+    eval.InJitterOffsetX = jitterX;
+    eval.InJitterOffsetY = jitterY;
     eval.InRenderSubrectDimensions.Width = static_cast<unsigned int>(inputWidth);
     eval.InRenderSubrectDimensions.Height = static_cast<unsigned int>(inputHeight);
     eval.InReset = 0;

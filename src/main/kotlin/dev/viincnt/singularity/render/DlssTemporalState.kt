@@ -2,6 +2,8 @@ package dev.viincnt.singularity.render
 
 import dev.viincnt.singularity.Singularity
 import net.minecraft.client.Camera
+import org.joml.Matrix4f
+import org.joml.Matrix4fc
 
 /** Keeps the camera transform history that DLSS evaluation consumes. */
 object DlssTemporalState {
@@ -10,6 +12,21 @@ object DlssTemporalState {
     private var previousZ: Double? = null
     private var frameIndex = 0L
     private var reported = false
+    private var jitterX = 0.0f
+    private var jitterY = 0.0f
+
+    fun jitteredProjection(matrix: Matrix4fc, width: Int, height: Int): Matrix4f {
+        if (width <= 0 || height <= 0) return Matrix4f(matrix)
+        jitterX = halton(frameIndex + 1, 2) - 0.5f
+        jitterY = halton(frameIndex + 1, 3) - 0.5f
+        return Matrix4f(matrix).apply {
+            m20(m20() + jitterX * 2.0f / width)
+            m21(m21() + jitterY * 2.0f / height)
+        }
+    }
+
+    fun jitterX() = jitterX
+    fun jitterY() = jitterY
 
     fun beginFrame(camera: Camera) {
         val position = camera.position()
@@ -36,5 +53,19 @@ object DlssTemporalState {
         previousZ = null
         frameIndex = 0
         reported = false
+        jitterX = 0.0f
+        jitterY = 0.0f
+    }
+
+    private fun halton(index: Long, base: Int): Float {
+        var value = 0.0f
+        var fraction = 1.0f
+        var remaining = index
+        while (remaining > 0) {
+            fraction /= base
+            value += fraction * (remaining % base)
+            remaining /= base
+        }
+        return value
     }
 }

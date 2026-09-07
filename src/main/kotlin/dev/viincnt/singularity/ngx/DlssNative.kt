@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vulkan.VulkanDevice
 import com.mojang.blaze3d.vulkan.VulkanUtils
 import dev.viincnt.singularity.Singularity
 import dev.viincnt.singularity.render.DlssFrameTargets
+import dev.viincnt.singularity.render.DlssTemporalState
 import java.nio.file.Files
 import java.nio.file.Path
 import org.lwjgl.vulkan.VK12
@@ -138,6 +139,7 @@ object DlssNative {
             resources.motion.vkImage(), resources.motionView.vkImageView(),
             resources.output.vkImage(), resources.outputView.vkImageView(),
             resources.inputWidth, resources.inputHeight, resources.outputWidth, resources.outputHeight,
+            DlssTemporalState.jitterX(), DlssTemporalState.jitterY(),
         )
         VulkanUtils.crashIfFailure(device, VK12.vkEndCommandBuffer(commandBuffer), "Singularity failed to end the DLSS evaluation command buffer")
         encoder.execute(commandBuffer)
@@ -196,6 +198,7 @@ object DlssNative {
         motionImage: Long, motionView: Long,
         outputImage: Long, outputView: Long,
         inputWidth: Int, inputHeight: Int, outputWidth: Int, outputHeight: Int,
+        jitterX: Float, jitterY: Float,
     ): String
 }
 
