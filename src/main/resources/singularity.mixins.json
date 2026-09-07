@@ -5,7 +5,6 @@
   "compatibilityLevel": "JAVA_25",
   "client": [
     "GpuDeviceAccessor",
-    "GameRendererProjectionMixin",
     "LevelRendererMixin",
     "VulkanBackendMixin",
     "VulkanGpuTextureMixin",
