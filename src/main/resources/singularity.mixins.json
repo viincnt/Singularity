@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.viincnt.singularity.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "GpuDeviceAccessor",
+    "VulkanBackendMixin",
+    "VulkanInstanceMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

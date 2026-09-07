@@ -1,0 +1,9 @@
+.gradle/
+.gradle-user-home/
+.kotlin/
+build/
+run/
+.idea/
+*.iml
+.vscode/
+native/build/
