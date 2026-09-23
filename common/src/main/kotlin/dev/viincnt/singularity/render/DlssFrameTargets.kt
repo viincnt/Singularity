@@ -7,7 +7,6 @@ import com.mojang.blaze3d.textures.GpuTexture
 import com.mojang.blaze3d.vulkan.VulkanGpuTextureView
 import com.mojang.blaze3d.vulkan.VulkanGpuTexture
 import dev.viincnt.singularity.Singularity
-import dev.viincnt.singularity.ngx.DlssOptimalSettings
 import org.joml.Vector4f
 
 /**
@@ -21,7 +20,7 @@ object DlssFrameTargets {
     private var targets: Targets? = null
     private var worldTargetUsedThisFrame = false
 
-    fun ensure(outputWidth: Int, outputHeight: Int, settings: DlssOptimalSettings): Targets? {
+    fun ensure(outputWidth: Int, outputHeight: Int, settings: UpscalerOptimalSettings): Targets? {
         val inputWidth = settings.optimalWidth ?: return null
         val inputHeight = settings.optimalHeight ?: return null
         targets?.takeIf {
@@ -108,6 +107,15 @@ object DlssFrameTargets {
     fun markDlssOutputReady(ready: Boolean) {
         targets?.dlssOutputReady = ready
     }
+
+    /**
+     * Whether last frame's reconstructed output is actually what gets composited.
+     *
+     * Camera jitter only makes sense when something corrects it back out via
+     * reconstruction; jittering the raw fallback render (what's composited
+     * whenever this is false) just makes the world visibly shake every frame.
+     */
+    fun isOutputReady(): Boolean = targets?.dlssOutputReady ?: false
 
     fun resourcesForEvaluation(): EvaluationResources? {
         val current = targets ?: return null

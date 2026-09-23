@@ -4,6 +4,7 @@
   "package": "dev.viincnt.singularity.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
+    "GameRendererProjectionMixin",
     "GpuDeviceAccessor",
     "LevelRendererMixin",
     "VulkanBackendMixin",

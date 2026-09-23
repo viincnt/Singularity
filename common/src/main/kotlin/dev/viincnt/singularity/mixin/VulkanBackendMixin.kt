@@ -21,8 +21,24 @@ abstract class VulkanBackendMixin {
     private fun singularityAddDeviceExtensions(original: Collection<String>): Collection<String> =
         buildSet {
             addAll(original)
-            add("VK_NVX_binary_import")
-            add("VK_NVX_image_view_handle")
+            // VK_NVX_binary_import/VK_NVX_image_view_handle are NVIDIA-only,
+            // required for NGX's DLSS interop. Requesting them unconditionally
+            // makes Vulkan device creation itself fail with
+            // VK_ERROR_EXTENSION_NOT_PRESENT on non-NVIDIA drivers, e.g.
+            // MoltenVK on macOS - so only request them where DlssNative
+            // actually runs (see DlssNative.initializeOnce's own OS gate).
+            if (System.getProperty("os.name").lowercase().contains("windows")) {
+                add("VK_NVX_binary_import")
+                add("VK_NVX_image_view_handle")
+            }
+            // Standard Khronos extension MetalNative uses to export the
+            // Vulkan device's MTLDevice/MTLCommandQueue and per-image
+            // MTLTexture objects (see singularity_native_metal.mm) - the
+            // non-deprecated replacement for MoltenVK's old VK_MVK_moltenvk
+            // vendor functions, which MoltenVK itself now warns can crash.
+            if (System.getProperty("os.name").lowercase().contains("mac")) {
+                add("VK_EXT_metal_objects")
+            }
             add("VK_KHR_buffer_device_address")
         }
 

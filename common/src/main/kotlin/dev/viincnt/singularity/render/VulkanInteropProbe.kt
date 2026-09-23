@@ -6,22 +6,23 @@ import com.mojang.blaze3d.vulkan.VulkanDevice
 import com.mojang.blaze3d.vulkan.VulkanGpuTexture
 import com.mojang.blaze3d.vulkan.VulkanGpuTextureView
 import dev.viincnt.singularity.Singularity
+import dev.viincnt.singularity.metal.MetalNative
 import dev.viincnt.singularity.mixin.GpuDeviceAccessor
 import dev.viincnt.singularity.ngx.DlssNative
 import net.minecraft.client.Minecraft
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent
 
 /**
- * Discovers the native resources that a DLSS implementation will consume.
+ * Discovers the native resources that a DLSS/MetalFX implementation will consume.
  *
- * AfterLevel is the useful boundary: world rendering is complete, while the
- * main depth texture still contains scene depth and the GUI has not been drawn.
+ * Called by each loader's entrypoint right after world rendering completes and
+ * before the GUI is drawn: the main depth texture still contains scene depth,
+ * so this is the useful boundary regardless of which mod-loading event fires it.
  */
 object VulkanInteropProbe {
     private var lastSnapshot: VulkanFrameResources? = null
     private var reportedNonVulkanBackend = false
 
-    fun onAfterLevel(event: RenderLevelStageEvent.AfterLevel) {
+    fun runAfterLevel() {
         val deviceInfo = RenderSystem.getDevice().deviceInfo
         val backend = (RenderSystem.getDevice() as GpuDeviceAccessor).`singularity$getBackend`()
         val target = Minecraft.getInstance().gameRenderer.mainRenderTarget()
@@ -86,14 +87,28 @@ object VulkanInteropProbe {
 
         NativeVulkanPassProbe.runOnce(backend)
         DlssNative.initializeOnce(backend)
+        MetalNative.initializeOnce(backend)
         DlssNative.logOptimalSettingsFor(snapshot.width, snapshot.height)
-        DlssNative.qualityRecommendation(snapshot.width, snapshot.height)?.let {
+        MetalNative.logOptimalSettingsFor(snapshot.width, snapshot.height)
+        val recommendation = DlssNative.qualityRecommendation(snapshot.width, snapshot.height)
+            ?: MetalNative.qualityRecommendation(snapshot.width, snapshot.height)
+        recommendation?.let {
             DlssFrameTargets.ensure(snapshot.width, snapshot.height, it)
             DlssFrameTargets.beginFrame()
             DlssTemporalState.beginFrame(Minecraft.getInstance().gameRenderer.mainCamera())
         }
         DlssNative.createFeatureOnce(backend, snapshot.width, snapshot.height)
-        DlssFrameTargets.markDlssOutputReady(DlssNative.evaluate(backend))
+        MetalNative.createFeatureOnce(snapshot.width, snapshot.height)
+        val dlssOutputReady = DlssNative.evaluate(backend)
+        // MetalNative.evaluate() submits to its own MTLCommandQueue, entirely
+        // outside Minecraft's Vulkan submission/synchronization - there's no
+        // fence/semaphore ordering its write to the output texture against
+        // Minecraft's own reads of it yet (VK_EXT_metal_objects can export a
+        // shared event for this; not wired up). Run it so it's exercised and
+        // diagnostic-logged, same as DLSS, but don't composite its output
+        // until that's fixed - doing so produced a black screen in testing.
+        MetalNative.evaluate()
+        DlssFrameTargets.markDlssOutputReady(dlssOutputReady)
         DlssFrameTargets.compositeTo(target)
     }
 

@@ -1,0 +1,77 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+    id 'net.neoforged.moddev' version '2.0.146'
+}
+
+base { archivesName = mod_id }
+
+kotlin {
+    jvmToolchain(25)
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = 'KotlinForForge'
+        url = 'https://thedarkcolour.github.io/KotlinForForge/'
+        content { includeGroup 'thedarkcolour' }
+    }
+}
+
+dependencies {
+    // Both this module and :common compile against official Mojang mappings,
+    // so no Loom cross-mapping remap ('namedElements') is needed here - the
+    // common module's classes already match this module's runtime names.
+    // jarJar embeds :common's output so the shipped mod jar is self-contained
+    // (unlike KotlinForForge, which players install separately as its own mod).
+    implementation project(':common')
+    jarJar(implementation(project(':common')))
+    implementation 'thedarkcolour:kotlinforforge-neoforge:6.3.0'
+}
+
+neoForge {
+    version = project.neo_version
+    runs {
+        client {
+            client()
+            jvmArguments.add '--enable-native-access=singularity'
+            jvmArguments.add "-Dsingularity.nativeDir=${rootProject.projectDir}/native/build"
+            // FML's early loading screen creates its GLFW window with an
+            // OpenGL context and hands that same window off to Minecraft's
+            // real Window; Vulkan surface creation then fails because the
+            // window wasn't created with GLFW_CLIENT_API=GLFW_NO_API. Disable
+            // the handoff so Window creates its own window with the right
+            // hints for the Vulkan backend.
+            jvmArguments.add '-Dfml.earlyWindowControl=false'
+            programArguments.addAll '--graphicsBackend', 'vulkan'
+            programArguments.addAll '--quickPlaySingleplayer', 'New World'
+            logLevel = org.slf4j.event.Level.INFO
+        }
+    }
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+            // :common's classes are just a runtime-classpath dependency jar
+            // by default, which FML's per-mod dev classloader doesn't scan
+            // for resources - singularity.mixins.json (declared in
+            // neoforge.mods.toml) lives in :common, so its sourceSet has to
+            // be added to this mod's content explicitly too.
+            sourceSet(project(':common').sourceSets.main)
+        }
+    }
+}
+
+var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+    var properties = [minecraft_version_range: minecraft_version_range, neo_version: neo_version,
+        mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version]
+    inputs.properties properties
+    expand properties
+    from 'src/main/templates'
+    into 'build/generated/sources/modMetadata'
+}
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+tasks.named('runClient').configure {
+    dependsOn rootProject.tasks.named('buildNativeWindows'), rootProject.tasks.named('buildNativeMacos')
+}

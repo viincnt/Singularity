@@ -1,0 +1,50 @@
+plugins {
+    // See common/build.gradle: 26.x is unobfuscated, so this uses Loom's
+    // non-remapping plugin variant and declares no `mappings` dependency.
+    id 'net.fabricmc.fabric-loom' version "${fabric_loom_version}"
+    id 'org.jetbrains.kotlin.jvm'
+}
+
+base { archivesName = mod_id }
+
+repositories {
+    mavenCentral()
+    maven { name = 'FabricMC'; url = 'https://maven.fabricmc.net/' }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+
+    // net.fabricmc.fabric-loom's non-remapping variant (see plugins{} above)
+    // has no remap pipeline, so there's no mod-aware modImplementation/modApi
+    // - plain Gradle configurations are enough here.
+    implementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    implementation "net.fabricmc:fabric-language-kotlin:${fabric_language_kotlin_version}"
+
+    // :common's classes already match this module's runtime names (both
+    // compile against Minecraft 26.x's own unobfuscated names). include(...)
+    // jar-in-jars :common's output so the shipped mod jar is self-contained
+    // (unlike fabric-language-kotlin, which players install separately, same
+    // as KotlinForForge on the neoforge side).
+    implementation project(':common')
+    include project(':common')
+}
+
+kotlin {
+    jvmToolchain(25)
+}
+
+processResources {
+    var properties = [mod_id: mod_id, mod_name: mod_name, mod_license: mod_license,
+        mod_version: mod_version, minecraft_version: minecraft_version, fabric_loader_version: fabric_loader_version]
+    inputs.properties properties
+    filesMatching('fabric.mod.json') {
+        expand properties
+    }
+}
+
+// TODO: net.fabricmc.fabric-loom's non-remapping run-config DSL rejects
+// mutating the default client run the way classic Loom does (throws
+// UnsupportedOperationException). Needs the non-remap plugin's actual run
+// customization API before `-Dsingularity.nativeDir=...` and
+// `--graphicsBackend vulkan` can be wired into `:fabric:runClient`.

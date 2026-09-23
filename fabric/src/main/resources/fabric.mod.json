@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "description": "Experimental temporal reconstruction (NVIDIA DLSS / Apple MetalFX) for Mojang's native Vulkan renderer. Research prototype; upscaling is not composited into the final frame yet.",
+  "license": "${mod_license}",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.viincnt.singularity.fabric.SingularityFabric"
+    ]
+  },
+  "mixins": [
+    "singularity.mixins.json",
+    "singularity-fabric.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${fabric_loader_version}",
+    "minecraft": "${minecraft_version}",
+    "fabric-language-kotlin": "*"
+  }
+}

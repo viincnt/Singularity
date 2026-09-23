@@ -21,6 +21,11 @@ abstract class GameRendererProjectionMixin {
         index = 0,
     )
     private fun singularityJitterWorldProjection(matrix: Matrix4f): Matrix4f {
+        // Only jitter when last frame's reconstructed output is actually what
+        // gets shown - jittering the raw fallback render (composited whenever
+        // reconstruction isn't) just makes the world visibly shake, since
+        // nothing ever corrects the sub-pixel offset back out.
+        if (!DlssFrameTargets.isOutputReady()) return matrix
         val resources = DlssFrameTargets.resourcesForEvaluation() ?: return matrix
         return DlssTemporalState.jitteredProjection(matrix, resources.inputWidth, resources.inputHeight)
     }

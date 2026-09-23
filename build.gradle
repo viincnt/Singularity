@@ -1,57 +1,28 @@
-plugins {
-    id 'java-library'
-    id 'org.jetbrains.kotlin.jvm' version '2.4.0'
-    id 'net.neoforged.moddev' version '2.0.146'
-}
-version = mod_version
-group = mod_group_id
-base { archivesName = mod_id }
-java.toolchain.languageVersion = JavaLanguageVersion.of(25)
-kotlin {
-    jvmToolchain(25)
-}
-repositories {
-    mavenCentral()
-    maven {
-        name = 'KotlinForForge'
-        url = 'https://thedarkcolour.github.io/KotlinForForge/'
-        content { includeGroup 'thedarkcolour' }
-    }
-}
-dependencies {
-    implementation 'thedarkcolour:kotlinforforge-neoforge:6.3.0'
-}
-neoForge {
-    version = project.neo_version
-    runs {
-        client {
-            client()
-            jvmArguments.add '--enable-native-access=singularity'
-            programArguments.addAll '--graphicsBackend', 'vulkan'
-            programArguments.addAll '--quickPlaySingleplayer', 'New World'
-            logLevel = org.slf4j.event.Level.INFO
-        }
-    }
-    mods {
-        "${mod_id}" { sourceSet(sourceSets.main) }
-    }
-}
-var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
-    var properties = [minecraft_version_range: minecraft_version_range, neo_version: neo_version,
-        mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version]
-    inputs.properties properties
-    expand properties
-    from 'src/main/templates'
-    into 'build/generated/sources/modMetadata'
-}
-sourceSets.main.resources.srcDir generateModMetadata
-neoForge.ideSyncTask generateModMetadata
+import org.gradle.internal.os.OperatingSystem
 
-tasks.register('buildNative', Exec) {
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '2.4.0' apply false
+}
+
+subprojects {
+    apply plugin: 'java-library'
+    version = mod_version
+    group = mod_group_id
+    java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+}
+
+tasks.register('buildNativeWindows', Exec) {
+    onlyIf { OperatingSystem.current().windows }
     workingDir projectDir
     commandLine 'cmd.exe', '/d', '/c', 'native\\build-native.bat'
 }
 
-tasks.named('runClient').configure {
-    dependsOn tasks.named('buildNative')
+tasks.register('buildNativeMacos', Exec) {
+    onlyIf { OperatingSystem.current().macOsX }
+    workingDir projectDir
+    commandLine 'bash', 'native/build-native-macos.sh'
+}
+
+tasks.register('buildNative') {
+    dependsOn tasks.named('buildNativeWindows'), tasks.named('buildNativeMacos')
 }
